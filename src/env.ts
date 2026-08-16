@@ -1,6 +1,8 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
+import { parseEnvBoolean } from './utils/env';
+
 export const env = createEnv({
   /**
    * Specify your server-side environment variables schema here. This way you can ensure the app
@@ -70,8 +72,14 @@ export const env = createEnv({
     OIDC_CLIENT_ID: z.string().optional(),
     OIDC_CLIENT_SECRET: z.string().optional(),
     OIDC_WELL_KNOWN_URL: z.string().optional(),
-    OIDC_ALLOW_DANGEROUS_EMAIL_LINKING: z.boolean().optional(),
+    OIDC_ALLOW_DANGEROUS_EMAIL_LINKING: z.boolean().default(false),
+    OAUTH_AUTO_REDIRECT: z.boolean().default(false),
     UPLOAD_MAX_FILE_SIZE_MB: z.coerce.number().int().positive().default(10),
+    RECEIPT_SCAN_PROVIDER: z.enum(['gemini', 'ollama']).optional(),
+    GEMINI_API_KEY: z.string().optional(),
+    GEMINI_MODEL: z.string().optional(),
+    OLLAMA_BASE_URL: z.string().optional(),
+    OLLAMA_MODEL: z.string().optional(),
   },
 
   /**
@@ -93,23 +101,21 @@ export const env = createEnv({
       process.env.DATABASE_URL ??
       `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}`,
     NODE_ENV: process.env.NODE_ENV,
-    DOCKER_OUTPUT: Boolean(JSON.parse(process.env.DOCKER_OUTPUT || 'false')),
+    DOCKER_OUTPUT: parseEnvBoolean(process.env.DOCKER_OUTPUT),
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_URL_INTERNAL: process.env.NEXTAUTH_URL_INTERNAL ?? process.env.NEXTAUTH_URL,
     CLEAR_CACHE_CRON_RULE: process.env.CLEAR_CACHE_CRON_RULE ?? '0 2 * * 0',
     CACHE_RETENTION_INTERVAL: process.env.CACHE_RETENTION_INTERVAL ?? '2 days',
-    ENABLE_SENDING_INVITES: 'true' === process.env.ENABLE_SENDING_INVITES,
-    DISABLE_EMAIL_SIGNUP: 'true' === process.env.DISABLE_EMAIL_SIGNUP,
-    INVITE_ONLY: 'true' === process.env.INVITE_ONLY,
+    ENABLE_SENDING_INVITES: parseEnvBoolean(process.env.ENABLE_SENDING_INVITES),
+    DISABLE_EMAIL_SIGNUP: parseEnvBoolean(process.env.DISABLE_EMAIL_SIGNUP),
+    INVITE_ONLY: parseEnvBoolean(process.env.INVITE_ONLY),
     FROM_EMAIL: process.env.FROM_EMAIL,
     EMAIL_SERVER_HOST: process.env.EMAIL_SERVER_HOST,
     EMAIL_SERVER_PORT: process.env.EMAIL_SERVER_PORT,
     EMAIL_SERVER_USER: process.env.EMAIL_SERVER_USER,
     EMAIL_SERVER_PASSWORD: process.env.EMAIL_SERVER_PASSWORD,
-    EMAIL_TLS_REJECT_UNAUTHORIZED: Boolean(
-      JSON.parse(process.env.EMAIL_TLS_REJECT_UNAUTHORIZED || 'true'),
-    ),
+    EMAIL_TLS_REJECT_UNAUTHORIZED: parseEnvBoolean(process.env.EMAIL_TLS_REJECT_UNAUTHORIZED, true),
     GOCARDLESS_COUNTRY: process.env.GOCARDLESS_COUNTRY,
     GOCARDLESS_SECRET_ID: process.env.GOCARDLESS_SECRET_ID,
     GOCARDLESS_SECRET_KEY: process.env.GOCARDLESS_SECRET_KEY,
@@ -139,18 +145,26 @@ export const env = createEnv({
     OIDC_CLIENT_ID: process.env.OIDC_CLIENT_ID,
     OIDC_CLIENT_SECRET: process.env.OIDC_CLIENT_SECRET,
     OIDC_WELL_KNOWN_URL: process.env.OIDC_WELL_KNOWN_URL,
-    OIDC_ALLOW_DANGEROUS_EMAIL_LINKING: Boolean(process.env.OIDC_ALLOW_DANGEROUS_EMAIL_LINKING),
+    OIDC_ALLOW_DANGEROUS_EMAIL_LINKING: parseEnvBoolean(
+      process.env.OIDC_ALLOW_DANGEROUS_EMAIL_LINKING,
+    ),
+    OAUTH_AUTO_REDIRECT: parseEnvBoolean(process.env.OAUTH_AUTO_REDIRECT),
     UPLOAD_MAX_FILE_SIZE_MB: process.env.UPLOAD_MAX_FILE_SIZE_MB
       ? Number(process.env.UPLOAD_MAX_FILE_SIZE_MB)
       : 10,
     NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
     NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA,
+    RECEIPT_SCAN_PROVIDER: process.env.RECEIPT_SCAN_PROVIDER,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL,
+    OLLAMA_BASE_URL: process.env.OLLAMA_BASE_URL,
+    OLLAMA_MODEL: process.env.OLLAMA_MODEL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
    * useful for Docker builds.
    */
-  skipValidation: Boolean(JSON.parse(process.env.SKIP_ENV_VALIDATION || 'false')),
+  skipValidation: parseEnvBoolean(process.env.SKIP_ENV_VALIDATION),
   /**
    * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and
    * `SOME_VAR=''` will throw an error.

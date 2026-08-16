@@ -10,6 +10,7 @@ import KeycloakProvider from 'next-auth/providers/keycloak';
 
 import { env } from '~/env';
 import { db } from '~/server/db';
+import { parseEnvBoolean } from '~/utils/env';
 
 import { mailServerConfig, sendSignUpEmail } from './mailer';
 import { getBaseUrl } from '~/utils/api';
@@ -281,8 +282,16 @@ function getProviders() {
  */
 export function validateAuthEnv() {
   console.log('Validating auth env');
-  if (!process.env.SKIP_ENV_VALIDATION) {
+  if (!parseEnvBoolean(process.env.SKIP_ENV_VALIDATION)) {
     const providers = getProviders();
+    const oauthProviders = providers.filter((provider) => 'oauth' === provider.type);
+
+    if (env.OAUTH_AUTO_REDIRECT && (1 !== oauthProviders.length || 1 !== providers.length)) {
+      console.warn(
+        'OAUTH_AUTO_REDIRECT is enabled, but automatic redirection will not happen until exactly one OAuth provider and no other authentication providers are configured.',
+      );
+    }
+
     if (0 === providers.length) {
       throw new Error(
         'No authentication providers are configured, at least one is required. Learn more here: https://github.com/oss-apps/split-pro?tab=readme-ov-file#setting-up-the-environment',
